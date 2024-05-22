@@ -16,8 +16,6 @@ def index():
          search_term = request.form.search_term
          print(search_term)
     
-    # wb = api.WbCall("gender")
-    # data['']
     return render_template("index.html")
 
 if __name__ == "__main__":
