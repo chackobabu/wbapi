@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h3>Meta Data</h3>
+
+{% if error %}
+<p></p>
+<p style="color: blue;">Apologies!</p>
+<p>No Meta data is not available for <strong>{{error}}!</strong></p>
+<a class="ref" href="">Go back to choose series</a>
+{% else %}
+<p></p>
+{% for each in passed %}
+<p><strong>{{each['keys']}}</strong>: {{each['value']}}</p>
+{% endfor %}
+<a class="ref" href="{{ url_for('select_series')}}">Go back to choose series</a>
+{% endif %}
+
+<script>
+
+</script>
+{% endblock %}
+

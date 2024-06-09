@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for msg in messages %}
+{{msg}}
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<h6>{{ session['selected_db_name'] }}</h6>
+<p>{{ series_data.source_note}} </p>
+
+<p>You are viewing {{ series_data.length }} table(s) about the topic. Please select any one.</p>
+
+<div class="col-md-6 series">
+    <input type="text" class="form-control" id="searchBar" placeholder="Search..." onkeyup="search_series();">
+</div>
+
+<form action="" class="select_series" method="post">
+    <ul style="max-height:300px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
+
+        {% for each in series_data.data %}
+        <li>
+            <input id="{{each['name']}}" class="form-check-input" type="checkbox" name="selected_series" value="{{ each['id']+'@@@'+each['name'] }}">
+            <label for="{{each['name']}}">
+                <p><strong>{{each['name']}}</strong>{% if each['id'] == each['id']|upper %} <a href="{{ url_for('meta_data', type='series', id=each['id']+'@@@'+each['name']) }}">view meta data</a> {% endif %}</p>
+            </label>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="display_selected">
+        <div class="rowd d-flex">
+            <p class="col-sm-1">Your selection:</p>
+            <ul class="col-sm-11 ms-3">
+                
+            </ul>
+        </div>
+    </div>
+
+    <div class="rowd d-flex align-items-center">
+        <button type="submit" class="col-sm-1 btn btn-success" name="submit">Select</button>
+        <!-- <button type="submit" class="col-sm-1 btn btn-info ms-3" name="meta_data">View Meta Data</button> -->
+        {% if error %}
+        <h6 class="col-sm-5 ms-3" style="color: red;">{{error}}</h6>
+        {% endif %}
+    </div>
+</form>
+
+{% endblock %}

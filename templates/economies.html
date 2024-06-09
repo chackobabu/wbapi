@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for msg in messages %}
+{{msg}}
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<p>You are viewing a list of <span id="count_countries">{{ econ_data.length }}</span> economies. Please use the filters and select any one or multiple.
+<p></p>
+<a href="#" onclick="showselection();">See chosen series(s)</a>
+<ul id="chosen_series" hidden="">
+    {% for each in econ_data.series %}
+    <li>{{ each }}</li>
+    {% endfor %}
+</ul>
+</p>
+<div class="rowd d-flex">
+    <div class="col-md-8 series">
+        <input type="text" class="form-control" id="searchBar" placeholder="Search..." onkeyup="search_series();">
+        <label for="select_all">
+        <input type="checkbox"  class="form-check-input" id="select_all"> Select All</label>    
+        <form action="" class="series select_series" method="post">
+            <ul style="max-height:380px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
+                {% for each in econ_data.econ_data %}
+                <li>
+                    <input id="{{each['name']}}" data-region="{{each['region']}}" data-income="{{each['incLevel']}}"
+                        class="form-check-input" type="checkbox" name="selected_economies" value="{{ each['id'] }}">
+                    <label for="{{each['name']}}">
+                        <p><strong>{{each['name']}}</strong><a style="padding-left: 5px;" href="{{ url_for('meta_data', type='economy', id=each['id'])+'@@@'+each['name'] }}">meta data</a></p>
+                    </label>
+                </li>
+                {% endfor %}
+            </ul>
+        </form>
+    </div>
+
+    <div class="col-md-2 ms-4">
+        <div>
+            <h6>Filter by region</h6>
+            <ul class="filter_region"
+                style="height:220px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
+                {% for each in econ_data.regions %}
+                <li>
+                    <input id="{{each}}" class="form-check-input" type="checkbox"
+                        value="{{ each }}">
+                    <label for="{{each}}">
+                        <p><strong>{{each}}</strong></p>
+                    </label>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            <h6>Filter by income level</h6>
+            <ul class="filter_inc_level"
+                style="height:180px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
+
+                {% for each in econ_data.income_levels %}
+                <li>
+                    <input id="{{each}}" class="form-check-input" type="checkbox"
+                        value="{{ each }}">
+                    <label for="{{each}}">
+                        <p><strong>{{each}}</strong></p>
+                    </label>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+</div>
+<div class="display_selected">
+    <div class="rowd d-flex">
+        <p class="col-sm-1">Your selection:</p>
+        <ul class="col-sm-11 ms-3">
+
+        </ul>
+    </div>
+</div>
+
+<div class="rowd d-flex align-items-center">
+    <button type="submit" class="col-sm-1 btn btn-success" name="submit" onclick="$('form').submit();">Select</button>
+    <!-- <button type="submit" class="col-sm-1 btn btn-info ms-3" name="meta_data">View Meta Data</button> -->
+    {% if error %}
+    <h6 class="col-sm-5 ms-3" style="color: red;">{{error}}</h6>
+    {% endif %}
+</div>
+
+{% endblock %}
