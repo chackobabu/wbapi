@@ -13,7 +13,13 @@
 <h6>{{ session['selected_db_name'] }}</h6>
 <p>{{ series_data.source_note}} </p>
 
-<p>You are viewing {{ series_data.length }} table(s) about the topic. Please select any one.</p>
+
+{% if session['type'] == 't' %}
+<p>You are viewing {{ series_data.length }} table(s) from the selected topic. Please select any one.</p>
+{% elif session['type'] == 'd' %}
+<p>You are viewing {{ series_data.length }} table(s) from the selected database. Please select any one.</p>
+{% endif %}
+
 
 <div class="col-md-6 series">
     <input type="text" class="form-control" id="searchBar" placeholder="Search..." onkeyup="search_series();">
@@ -34,7 +40,7 @@
 
     <div class="display_selected">
         <div class="rowd d-flex">
-            <p class="col-sm-1">Your selection:</p>
+            <p class="col-sm-1">Selected:</p>
             <ul class="col-sm-11 ms-3">
                 
             </ul>

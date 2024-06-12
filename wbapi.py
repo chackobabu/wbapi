@@ -2,30 +2,43 @@ import pandas as pd
 import wbgapi as wb
 
 class wbapi():
+    
+    def __init__(self):
+        pass
+    
     # do not make it get topics as soon as its initialised. make it another method.
-    def __init__(self, search_term=None):
-        
+    def search_topics(self, search_term=None):
         df = wb.topic.list(q=search_term)
-        self.topics = self.resp2_df(df)
+        topics = self.resp2_df(df)
         self.search_term_ret = search_term
         
-        if self.topics.shape[0] == 0:
+        if topics.shape[0] == 0:
             self.search_term_ret = "invalid"
             df = wb.topic.list()
-            self.topics =  self.resp2_df(df)
-                
-    def get_series(self, sel_db=None, search_term=None):
-        df = wb.series.list(topic=sel_db, q=search_term)
-        self.series =  self.resp2_df(df)
-    
-    def get_economies(self, sel_db=None):
-        self.economies = wb.economy.DataFrame(labels=True,skipAggs=True, db=sel_db)
-    
-    def get_metaData_series(self, param):
-        self.meta_data_series = wb.series.metadata.get(param) 
+            topics = self.resp2_df(df)
         
-    def get_metaData_economy(self, param):
-        self.meta_data_economy = wb.economy.metadata.get(param)   
+        return topics
+    
+    def search_databases(self, search_term=None):
+        df = wb.source.list(q=search_term)
+        databases = self.resp2_df(df)
+        return databases
+                
+    def series(self, topic=None, db=None,search_term=None):
+        df = wb.series.list(topic=topic, db=db, q=search_term)
+        return self.resp2_df(df)
+    
+    def economies(self, sel_db=None):
+        return wb.economy.DataFrame(labels=True,skipAggs=True, db=sel_db)
+    
+    def metaData_series(self, param):
+        return wb.series.metadata.get(param) 
+        
+    def metaData_economy(self, param):
+        return wb.economy.metadata.get(param)   
+        
+    def get_dataframe(self, series, economies, time):
+        return wb.data.DataFrame(series=series, economy=economies,time=time, labels=True, skipBlanks=True)
         
     def resp2_df(self, resp):
         df = pd.DataFrame()
