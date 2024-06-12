@@ -25,6 +25,9 @@ function check_referrer() {
         $('a.ref').text('Go back to choose economies');
     }
 };
+
+
+
 $(document).ready(function () {
     check_referrer()
     //select all button
@@ -36,24 +39,56 @@ $(document).ready(function () {
             $('label[for="select_all"]').text(' Select All');
         }
     });
+
     function update_count() {
         $('#count_countries').text($('.select_series li input:visible').length);
     };
+
     //searchbar function - defining
-    function search_bar() {
-        var search_terms = $.map($('#searchBar').val().toLowerCase().split(','), $.trim);
-        $('.select_series li').each(function () {
-            var choice = $(this).find('input').attr('id').toLowerCase().trim();
-            var region_choice = $(this).find('input').attr('data-region').toLowerCase().trim();
-            var incLevel_choice = $(this).find('input').attr('data-income').toLowerCase().trim();
-            if (choice.match(search_terms.join('|')) && region_choice.match(region_filters.join('|')) && incLevel_choice.match(income_filters.join('|'))) {
-                $(this).show();
-            } else {
-                $(this).hide();
-            }
-        });
-        update_count();
+    // function search_bar() {
+    //     var search_terms = $.map($('#searchBar').val().toLowerCase().split(','), $.trim);
+    //     $('.select_series li').each(function () {
+    //         var choice = $(this).find('input').attr('id').toLowerCase().trim();
+    //         var region_choice = $(this).find('input').attr('data-region').toLowerCase().trim();
+    //         var incLevel_choice = $(this).find('input').attr('data-income').toLowerCase().trim();
+    //         if (choice.match(search_terms.join('|')) && region_choice.match(region_filters.join('|')) && incLevel_choice.match(income_filters.join('|'))) {
+    //             $(this).show();
+    //         } else {
+    //             $(this).hide();
+    //         }
+    //     });
+    //     update_count();
+    // }
+
+    function searchbar(type) {
+        if (type == "series") {
+            var search_terms = $.map($('#searchBar_series').val().toLowerCase().split(','), $.trim);
+            $('.select_series li').each(function () {
+                var choice = $(this).find('input').attr('id').toLowerCase().trim();
+                if (choice.match(search_terms.join('|'))) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+
+        } else if (type == 'economies') {
+            console.log("economies_search")
+            var search_terms = $.map($('#searchBar_economies').val().toLowerCase().split(','), $.trim);
+            $('.select_series li').each(function () {
+                var choice = $(this).find('input').attr('id').toLowerCase().trim();
+                var region_choice = $(this).find('input').attr('data-region').toLowerCase().trim();
+                var incLevel_choice = $(this).find('input').attr('data-income').toLowerCase().trim();
+                if (choice.match(search_terms.join('|')) && region_choice.match(region_filters.join('|')) && incLevel_choice.match(income_filters.join('|'))) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+            update_count();
+        }
     }
+
     //display selected countries in a box below
     var list = $('.select_series li input[type="checkbox"]');
     $('.select_series li input[type="checkbox"]').add('#select_all').on('change', function () {
@@ -70,6 +105,7 @@ $(document).ready(function () {
             displayList.append('<li style="display:inline;">' + id + ', </li>');
         });
     });
+
     //region and income level filters
     var region_checkboxes = $('.filter_region li input[type="checkbox"]');
     var inclevel_checkboxes = $('.filter_inc_level li input[type="checkbox"]');
@@ -84,6 +120,7 @@ $(document).ready(function () {
         });
         console.log("Region filters:", region_filters);
     });
+
     let income_filters = [];
     inclevel_checkboxes.on('change', function () {
         income_filters = [];
@@ -94,9 +131,10 @@ $(document).ready(function () {
         });
         console.log("income filters:", income_filters);
     });
+
     region_checkboxes.add(inclevel_checkboxes).on('change', function () {
         update_count();
-        search_bar();
+        searchbar(type="economies");
         region_re = region_filters.join('|')
         income_re = income_filters.join('|')
         $('.select_series li:visible').each(function () {
@@ -123,8 +161,13 @@ $(document).ready(function () {
             }
         });
     });
+
     //the search bar
-    $("#searchBar").on('keyup', function () {
-        search_bar();
+    $("#searchBar_economies").on('keyup', function () {
+        searchbar(type = 'economies');
+    });
+
+    $("#searchBar_series").on('keyup', function () {
+        searchbar(type = 'series');
     });
 });

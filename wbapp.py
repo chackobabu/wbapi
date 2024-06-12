@@ -23,24 +23,12 @@ def select_db():
     topics_df = g.wb.search_topics(session['q'])
     session['q'] = g.wb.search_term_ret
     
-    databases = g.wb.search_databases(session['q'])
-    # print(databases)
-    
     topics = [] 
     for i in topics_df.index:
         d = {}
         d['name'] = topics_df.loc[i,'value']
         d['id'] = topics_df.loc[i,'id']
         topics.append(d)
-        
-    dbs = []
-    for i in databases.index:
-        d = {}
-        d['name'] = databases.loc[i,'name']
-        d['id'] = databases.loc[i,'id']
-        d['lastupdated'] = databases.loc[i,'lastupdated']
-        d['dataavailability'] = databases.loc[i,'dataavailability']
-        dbs.append(d)
         
     if request.method == "POST":
         if 'selection' in request.form.keys():
@@ -60,12 +48,10 @@ def select_db():
             return redirect(url_for("select_series"))
         
         else:
+            session['source_note'] = ""
             session['type'] = 'all'
             return redirect(url_for("select_series"))
-            # return render_template("select_db.html", error="Please select one",\
-            #     passed={'length':topics_df.shape[0], 'data':topics},\
-            #     passed_dbs={'length':databases.shape[0], 'data':dbs})
-        
+
     return render_template("select_db.html",\
                 passed={'length':topics_df.shape[0], 'data':topics})
 
@@ -73,15 +59,12 @@ def select_db():
 def select_series():
     
     type = session['type']
-     
-    # print("\n\n",type,id)
+    
     if type == "t":
         id = session['selected_id']
         series = g.wb.series(topic=id, db=None)
     elif type == "all":
         series = g.wb.series()
-        
-    print(series)
     
     series_data = []
     
@@ -92,7 +75,6 @@ def select_series():
         series_data.append(d)
         
     if request.method == "POST":
-    
         if 'selected_series' in request.form.keys() and 'submit' in request.form.keys():
             session['selected_series'] = request.form.getlist('selected_series')
             return redirect(url_for("economies"))

@@ -33,29 +33,6 @@
             </ul>
     </div>
 
-    <!-- <div class="col-md-8">
-        <h3>Databases</h3>
-        {% if session['q'] == "" %}
-        <p>{{ passed_dbs.length }} available database(s). Please select any one.</p>
-        {% elif session['q'] == "invalid" %}
-        <p>The term did not match any topic. You are viewing {{ passed_dbs.length }} available topics! Please select any one.</p>
-        {% else %}
-        <p>{{ passed_dbs.length }} database(s) that contain the word '{{ session['q'] }}'. Please select any one.</p>
-        {% endif %}
-
-            <ul style="max-height:300px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
-                {% for each in passed_dbs.data %}
-                <li>
-                    <input id="{{each['name']}}" type="radio" name="selection" value="d_{{ each['id'] }}|{{ each['name'] }}">
-                    <label for="{{each['name']}}">
-                        <p><strong>{{each['name']}}</strong></p>
-                    </label>
-                </li>
-                {% endfor %}
-            </ul>
-
-    </div> -->
-
     <div class="rowd d-flex align-items-center">
         <button type="submit" class="col-sm-1 btn btn-success">Choose Series</button>
         {% if error %}

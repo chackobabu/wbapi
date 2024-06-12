@@ -16,13 +16,12 @@
 
 {% if session['type'] == 't' %}
 <p>You are viewing {{ series_data.length }} table(s) from the selected topic. Please select any one.</p>
-{% elif session['type'] == 'd' %}
-<p>You are viewing {{ series_data.length }} table(s) from the selected database. Please select any one.</p>
+{% elif session['type'] == 'all' %}
+<p>You are viewing {{ series_data.length }} table(s). Please select any one.</p>
 {% endif %}
 
-
 <div class="col-md-6 series">
-    <input type="text" class="form-control" id="searchBar" placeholder="Search..." onkeyup="search_series();">
+    <input type="text" class="form-control" id="searchBar_series" placeholder="Search...">
 </div>
 
 <form action="" class="select_series" method="post">
