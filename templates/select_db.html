@@ -1,31 +1,24 @@
-{% extends 'search_db.html' %}
-
-{% block select_db %}
+{% extends 'base.html' %}
+{% block content %}
 
 <p></p>
 
-<form class="select_db" method="post">
-
-<p>Select a topic OR a database</p>
-
-<div class="row d-flex">
-
-    <div class="col-md-6">
+<form class="select_db select_series" method="post">
+    
+    <div class="col-md-12">
         <h3>Topics</h3>
-        {% if session['q'] == "" %}
-        <p>{{ passed.length }} available topics. Please select any one.</p>
-        {% elif session['q'] == "invalid" %}
-        <p>The term did not match any topic. You are viewing {{ passed.length }} available topics! Please select any one.</p>
-        {% else %}
-        <p>{{ passed.length }} topic(s) that contain the word '{{ session['q'] }}'. Please select any one.</p>
-        {% endif %}
-
+        <p>You are viewing {{ passed.length }} available topics. Please select from the list.</p>
+        <input type="text" class="form-control eco" id="searchBar_series" placeholder="Search...">
+        <input type="checkbox" class="form-check-input" id="select_all">
+        <label for="select_all"> Select All</label>
         
             <ul style="max-height:300px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
                 {% for each in passed.data %}
                 <li>
-                    <input id="{{each['name']}}" type="radio" name="selection" value="t_{{ each['id'] }}|{{ each['name'] }}">
-                    <label for="{{each['name']}}">
+                    
+                    <input id="{{each['name']}}" type="checkbox" name="selection" value="{{ each['id'] }}">
+                    <label for="{{each['name']}}" onmouseover="description({{ each['sourceNote']}});" 
+                    onmouseout="$('.description').prop('hidden', true);">
                         <p><strong>{{each['name']}}</strong></p>
                     </label>
                 </li>
@@ -33,14 +26,28 @@
             </ul>
     </div>
 
+    <div class="display_selected">
+        <div class="rowd d-flex">
+            <p class="col-sm-1">Selected:</p>
+            <ul class="col-sm-11 ms-3">
+                
+            </ul>
+        </div>
+    </div>
+
     <div class="rowd d-flex align-items-center">
-        <button type="submit" class="col-sm-1 btn btn-success">Choose Series</button>
+        <button type="submit" class="col-sm-1 btn btn-success">View all Series</button>
         {% if error %}
         <h6 class="col-sm-3 ms-3" style="color: red;">{{error}}</h6>
     {% endif %}
     </div>
 
-</div>
+    <div class="card description" hidden="">
+        <div class="container">  
+          <p></p>
+        </div>
+      </div>
+
 </form>
 
 

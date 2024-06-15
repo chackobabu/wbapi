@@ -13,12 +13,7 @@
 <h6>{{ session['selected_db_name'] }}</h6>
 <p>{{ series_data.source_note}} </p>
 
-
-{% if session['type'] == 't' %}
-<p>You are viewing {{ series_data.length }} table(s) from the selected topic. Please select any one.</p>
-{% elif session['type'] == 'all' %}
-<p>You are viewing {{ series_data.length }} table(s). Please select any one.</p>
-{% endif %}
+<p>You are viewing {{ series_data.length }} table(s) from the selected topic(s). Please select any one.</p>
 
 <div class="col-md-6 series">
     <input type="text" class="form-control" id="searchBar_series" placeholder="Search...">

@@ -13,12 +13,10 @@
 <p>You are viewing a list of <span id="count_countries">{{ econ_data.length }}</span> economies. Please use the filters
     and select any one or multiple.
 <p></p>
-
 </p>
 <div class="rowd d-flex">
     <div class="col-md-8 series">
         <input type="text" class="form-control eco" id="searchBar_economies" placeholder="Search...">
-
         <input type="checkbox" class="form-check-input" id="select_all">
         <label for="select_all"> Select All</label>
         <form action="" class="series select_series" method="post">
@@ -26,7 +24,8 @@
                 {% for each in econ_data.econ_data %}
                 <li>
                     <input id="{{each['name']}}" data-region="{{each['region']}}" data-income="{{each['incLevel']}}"
-                        class="form-check-input" type="checkbox" name="selected_economies" value="{{ each['id'] }}">
+                        class="form-check-input" type="checkbox" name="selected_economies" value="{{ each['id'] }}"
+                        {% if selected_economies and each['id'] in selected_economies %} checked {% endif %}>
                     <label for="{{each['name']}}">
                         <p><strong>{{each['name']}}</strong><a style="padding-left: 5px;"
                                 href="{{ url_for('meta_data', type='economy', id=each['id'])+'@@@'+each['name'] }}">meta

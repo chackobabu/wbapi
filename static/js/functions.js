@@ -26,7 +26,15 @@ function check_referrer() {
     }
 };
 
-
+function description(text) {
+    if ($('.description').is("visible")){
+        $('.description').prop('hidden', true);
+        
+    } else {
+        $('.description').prop('hidden', false);
+        $('.description .container p').text(text);
+    }
+}
 
 $(document).ready(function () {
     check_referrer()

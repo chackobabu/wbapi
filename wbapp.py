@@ -1,73 +1,74 @@
 from flask import Flask, render_template, session, redirect, url_for, request, send_file, flash, g
 import wbapi
 import json  
-# from dash_app import dash
+import pandas as pd
+import os
+from flask_caching import Cache
+
+import plotly
+import regex as re
+
+from dash import Dash, dash_table, html, dcc
+import dash_bootstrap_components as dbc
+
+import plotly.graph_objects as go
+# from plotly.subplots import make_subplots
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "wbgapp"
+
+app.config['CACHE_TYPE'] = 'RedisCache'
+app.config['CACHE_REDIS_HOST'] = os.getenv('REDIS_HOST', 'localhost')
+app.config['CACHE_REDIS_PORT'] = int(os.getenv('REDIS_PORT', 6379))
+app.config['CACHE_REDIS_DB'] = int(os.getenv('REDIS_DB', 0))
+app.config['CACHE_REDIS_PASSWORD'] = os.getenv('REDIS_PASSWORD', "c@che")
+app.config['CACHE_DEFAULT_TIMEOUT'] = int(os.getenv('CACHE_DEFAULT_TIMEOUT', 300))
 # socketio = SocketIO(app)
+
+cache = Cache(app)
 
 @app.before_request
 def before_request():
     g.wb = wbapi.wbapi()
-              
+
+@cache.cached()            
 @app.route('/', methods=['GET','POST'])
 def index():
-    if request.method == "POST":
-        session['q'] = request.form['search_term']
-        return redirect(url_for("select_db"))
-    return render_template("search_db.html")
+    topics_df = g.wb.search_topics()
 
-@app.route('/select_db', methods=['GET','POST'])
-def select_db():
-    topics_df = g.wb.search_topics(session['q'])
-    session['q'] = g.wb.search_term_ret
-    
     topics = [] 
     for i in topics_df.index:
         d = {}
         d['name'] = topics_df.loc[i,'value']
         d['id'] = topics_df.loc[i,'id']
+        d['sourceNote'] = json.dumps(topics_df.loc[i,'sourceNote'])
+        # print(d['sourceNote'])
         topics.append(d)
         
     if request.method == "POST":
         if 'selection' in request.form.keys():
-            
-            type, selection = request.form['selection'].split("_")
-            session['type'] = type
-
-            session['selected_id'] = selection.split("|")[0]
-            session['selected_name'] = selection.split("|")[1]
-            
-            if type == 't':
-                topic = session['selected_id']
-                session['source_note'] = topics_df.query(f'id == "{topic}"')['sourceNote'].iloc[0]
-            else:
-                session['source_note'] = ""
-        
+            session['selected_id'] = request.form.getlist('selection')
             return redirect(url_for("select_series"))
         
-        else:
-            session['source_note'] = ""
-            session['type'] = 'all'
-            return redirect(url_for("select_series"))
-
     return render_template("select_db.html",\
                 passed={'length':topics_df.shape[0], 'data':topics})
 
+@cache.cached() 
 @app.route('/select_series', methods=['GET','POST'])
 def select_series():
     
-    type = session['type']
-    
-    if type == "t":
-        id = session['selected_id']
-        series = g.wb.series(topic=id, db=None)
-    elif type == "all":
+    if len(session['selected_id']) > 0:
+        series = []
+        for id in session['selected_id']:
+            series.append(g.wb.series(topic=id, db=None))
+        series = pd.concat(series)
+    else:
         series = g.wb.series()
     
-    series_data = []
+    series.reset_index(inplace=True, drop=True)
+    print(series)
     
+    series_data = []
     for i in series.index:  
         d = {}
         d['name'] = series.loc[i,'value']
@@ -79,10 +80,11 @@ def select_series():
             session['selected_series'] = request.form.getlist('selected_series')
             return redirect(url_for("economies"))
         else:
-            return render_template("select_series.html", series_data={'source_note':session.get('source_note',''),'length':len(series_data),'data':series_data}, error="Please select one")
+            return render_template("select_series.html", series_data={'length':len(series_data),'data':series_data}, error="Please select one")
         
-    return render_template("select_series.html", series_data={'source_note':session.get('source_note',''),'length':len(series_data),'data':series_data})
+    return render_template("select_series.html", series_data={'length':len(series_data),'data':series_data})
 
+@cache.cached() 
 @app.route('/meta_data', methods=['GET','POST'])
 def meta_data():
 
@@ -107,6 +109,7 @@ def meta_data():
         
     return render_template("meta_data.html", passed=passed)
 
+@cache.cached() 
 @app.route('/economies', methods=['GET','POST'])
 def economies():
     
@@ -116,8 +119,12 @@ def economies():
     for each in session['selected_series']:
         names.append(each.split('@@@')[1])
         chosen_ids.append(each.split('@@@')[0])
+        
     print(names, chosen_ids)
     
+    if len(names) == 1:
+        session['series_name'] = names[0]
+        
     economies = g.wb.economies().reset_index()
     
     econ_data = []
@@ -140,18 +147,20 @@ def economies():
         if len(chosen_economies) == 0 and start>end:
             return render_template("economies.html",\
                                 econ_data = {'econ_data':econ_data,'length':len(economies),'regions': regions,'income_levels': inc_levels, 'series':names},\
-                                error=f"No economy selected. Timeseries {start} to {end} cannot be processed")
+                                error=f"No economy selected. Timeseries {start} to {end} cannot be processed",\
+                                selected_economies=chosen_economies)
         elif len(chosen_economies) == 0:
             return render_template("economies.html",\
                     econ_data = {'econ_data':econ_data,'length':len(economies),'regions': regions,'income_levels': inc_levels, 'series':names},\
-                    error="No economy selected")
+                    error="No economy selected",\
+                    selected_economies=chosen_economies)
         elif start>end:
             return render_template("economies.html",\
                 econ_data = {'econ_data':econ_data,'length':len(economies),'regions': regions,'income_levels': inc_levels, 'series':names},\
-                error=f"Timeseries {start} to {end} cannot be processed")
+                error=f"Timeseries {start} to {end} cannot be processed",\
+                selected_economies=chosen_economies)
             
         else:
-            session.clear()
             session['economies'] = chosen_economies
             session['series'] = chosen_ids
             session['time'] = [int(each) for each in [start,end,period]]
@@ -160,15 +169,43 @@ def economies():
     return render_template("economies.html",\
         econ_data = {'econ_data':econ_data,'length':len(economies),'regions': regions,'income_levels': inc_levels, 'series':names})
 
+dash_app = Dash(__name__, server=app, url_base_pathname='/dashboard/',external_stylesheets=[dbc.themes.BOOTSTRAP])
+dash_app.layout = [dbc.Container(
+    dbc.Alert("Hello Bootstrap!", color="success"),
+    className="p-5")]
+
+@cache.cached() 
 @app.route('/dashboard', methods=['GET','POST'])
 def dashboard():
     
     print(session['series'], session['economies'], session['time'])
-    
     df = g.wb.get_dataframe(series =session['series'], economies=session['economies'], time=range(session['time'][0],session['time'][1],session['time'][2]))
-    print(df)
+    # df.to_csv("extract.csv")
+    df = df.round(2)
+
     
-    return render_template("dashboard.html")
+    pattern = re.compile(r'\d{4}')
+    years_int = {each:int(pattern.findall(each)[0]) for each in df.filter(regex="\d{4}").columns}
+    df.rename(years_int, axis=1, inplace=True)
+    # print(list(years_int.values()))
+    
+    if session.get('series_name'):
+        df['Series'] = session['series_name']
+        df = df[['Country','Series'] + list(years_int.values())].copy()
+    
+    table = dash_table.DataTable(df.to_dict('records'),\
+                                columns=[{"name": i, "id": i} for i in df.columns],\
+                                        filter_action='native',
+                                        style_table={'height': 200,'width':200},
+                                        style_data={
+                                            'width': '150px', 'minWidth': '150px', 'maxWidth': '150px',
+                                            'overflow': 'hidden',
+                                            'textOverflow': 'ellipsis',
+                                        },\
+                                        style_as_list_view=True)
+
+    dash_app.layout.append(table)
+    return redirect(url_for('/dashboard/'))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
