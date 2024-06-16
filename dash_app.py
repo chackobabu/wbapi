@@ -22,9 +22,9 @@ del df
 
 dash_app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-years = df_wide.filter(regex=r'\d{4}').columns
-print(years)
 
+# this also wont be necessary once in the main app
+years = df_wide.filter(regex=r'\d{4}').columns
 start, end, diff = int(years[0]), int(years[-1])+1, int(years[1])-int(years[0])
 
 ddOpts = df_wide['Series'].unique()
@@ -57,19 +57,21 @@ dash_app.layout = dbc.Container(
             html.P(),
             html.P(),
             dbc.Col(html.Label(html.H6("Select Year:")), style={'color':'darkblue'}, width=1),
-            dbc.Col(slider, width=10),
-            dbc.Col(id="year_selected", width=1)
+            dbc.Col(slider, width=11)
             ],className="row d-flex align-items-center justify-content-center"),
-            dbc.Col(dcc.Graph(id="scatter_plot"), width=12),
+            dbc.Col(html.H4(id="title"), width=12,style={'color':'darkblue','textAlign':'center', 'padding-top':'15px'}),
+            dbc.Col(dcc.Graph(id="scatter_plot"), width=12, ),
             dbc.Row([
             dbc.Col(html.Label(html.H6("Choose Category to Compare:")), style={'color':'darkblue'}, width=2),
-            dbc.Col(legend, width=2)])
+            dbc.Col(legend, width=2)], justify='end')
         ]
 )
-@dash_app.callback(Output('year_selected','children'),
-            [Input('year_slider', 'value')])
-def update_output_div(year_slider):
-    return f"Selection: {year_slider}"
+@dash_app.callback(Output('title','children'),
+            [Input('x_axis','value'),\
+            Input('y_axis','value'),   
+            Input('year_slider', 'value')])
+def update_output_div(x_axis, y_axis, year_slider):
+    return f"{y_axis} vs {x_axis} at year {year_slider}"
 
 @dash_app.callback(
             Output('scatter_plot', 'figure'),
@@ -82,39 +84,23 @@ def update_output_div(year_slider):
 def update_graph(year, x_axis,y_axis, log_x, log_y, legend):
     df = df_long.query(f'Year == "{year}"').copy()
     
+    
     if log_x and log_x[0] == 1:
         df[x_axis] = np.log(df[x_axis])
-        df.rename({x_axis:f"Log {x_axis}"},axis=1, inplace=True)
-        x_axis = f"Log {x_axis}"
         
     if log_y and log_y[0] == 1:
         df[y_axis] = np.log(df[y_axis])
-        df.rename({y_axis:f"Log {y_axis}"},axis=1, inplace=True)
-        y_axis = f"Log {y_axis}"
-            
+
     figure = px.scatter(
         df, x=x_axis, y=y_axis, 
         color=legend,
-        hover_data=['Country'],\
+        hover_name='Country',
+        # title=f"{x_axis} vs {y_axis} at {year}"
             )
+    
     figure.update_traces(marker_size=15, opacity=0.7)
+    # figure.update_layout(margin={'l': 40, 'b': 40, 't': 10, 'r': 0}, hovermode='closest')
     
-    # traces = []
-    # for each in df[legend].unique():
-    #     _df = df.query(f'{legend} == "{each}"').copy()
-    #     x = _df.query(f'series == "{x_axis}"')['value'].to_list()
-    #     y = _df.query(f'series == "{y_axis}"')['value'].to_list()
-    #     trace = go.Scatter(x=x, y=y, mode='markers',\
-    #         opacity=0.7, marker={'size':15})
-    #     traces.append(trace)
-
-    # log_x, log_y = ('log' if log_x else None), ('log' if log_y else None)
-        
-    # layout = go.Layout(title=f'{y_axis} vs {x_axis}',\
-    #     xaxis={'title':x_axis, 'type': log_x },\
-    #     yaxis={'title':y_axis, 'type': log_y })
-    
-    # fig = {'data':traces,'layout':layout}
     return figure
 
 # year_opts = [{'label':str(year), 'value':year for year in df_long['year'].unique}]
