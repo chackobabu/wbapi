@@ -34,6 +34,7 @@ def before_request():
 @cache.cached()            
 @app.route('/', methods=['GET','POST'])
 def index():
+    session.clear()
     topics_df = g.wb.search_topics()
 
     topics = [] 
@@ -66,7 +67,7 @@ def select_series():
         series = g.wb.series()
     
     series.reset_index(inplace=True, drop=True)
-    print(series)
+    # print(series)
     
     series_data = []
     for i in series.index:  
@@ -170,16 +171,14 @@ def economies():
         econ_data = {'econ_data':econ_data,'length':len(economies),'regions': regions,'income_levels': inc_levels, 'series':names})
 
 dash_app = Dash(__name__, server=app, url_base_pathname='/dashboard/',external_stylesheets=[dbc.themes.BOOTSTRAP])
-dash_app.layout = [dbc.Container(
-    dbc.Alert("Hello Bootstrap!", color="success"),
-    className="p-5")]
+dash_app.layout = []
 
 @cache.cached() 
 @app.route('/dashboard', methods=['GET','POST'])
 def dashboard():
     
-    print(session['series'], session['economies'], session['time'])
-    df = g.wb.get_dataframe(series =session['series'], economies=session['economies'], time=range(session['time'][0],session['time'][1],session['time'][2]))
+    # print(session['series'], session['economies'], session['time'])
+    df = g.wb.get_dataframe(series =session['series'], economies=session['economies'], time=range(session['time'][0],session['time'][1]+1,session['time'][2]))
     # df.to_csv("extract.csv")
     df = df.round(2)
 
@@ -191,12 +190,22 @@ def dashboard():
     
     if session.get('series_name'):
         df['Series'] = session['series_name']
-        df = df[['Country','Series'] + list(years_int.values())].copy()
+        # df = df[['Country','Series'] + list(years_int.values())].copy()
+        
+    with open('static/json/economies_dict.json','r') as file:
+        economies_dict = json.loads(file.read())
+    
+    df['Region'] = df['Country'].apply(lambda name:economies_dict[name]['region'])
+    df['Income Level'] = df['Country'].apply(lambda name:economies_dict[name]['incomeLevel'])
+    
+    df.reset_index(inplace=True)
+    df = df[['Country','Series','Region','Income Level'] + list(years_int.values())].copy()
+    print(df.head())
+    df.to_csv("extract.csv")
     
     table = dash_table.DataTable(df.to_dict('records'),\
                                 columns=[{"name": i, "id": i} for i in df.columns],\
-                                        filter_action='native',
-                                        style_table={'height': 200,'width':200},
+                                        style_table={'height': 600,'overflowX':'auto', 'overflowY':'auto'},
                                         style_data={
                                             'width': '150px', 'minWidth': '150px', 'maxWidth': '150px',
                                             'overflow': 'hidden',
@@ -204,8 +213,9 @@ def dashboard():
                                         },\
                                         style_as_list_view=True)
 
+    dash_app.layout = []
     dash_app.layout.append(table)
-    return redirect(url_for('/dashboard/'))
+    return render_template('dashboard.html')
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
