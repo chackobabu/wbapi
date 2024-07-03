@@ -2,37 +2,37 @@
 
 {% block content %}
 
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-{% for msg in messages %}
-{{msg}}
-{% endfor %}
+{% if error %}
+<div class="alert alert-warning error_note" style="display: flex; align-items: center; color: red;">
+    {{error}}
+    <a href="#" style="margin-left: 10px; color: blue;" onclick="$('.error_note').remove();">close</a>
+  </div>
 {% endif %}
-{% endwith %}
 
-<h6>{{ session['selected_db_name'] }}</h6>
-<p>{{ series_data.source_note}} </p>
-
-<p>You are viewing {{ series_data.length }} table(s) from the selected topic(s). Please select any one.</p>
+<h5>Series:</h5>
+<p>You are viewing {{ series_data.length }} series from the selected topic(s). Please select any one.</p>
 
 <div class="col-md-6 series">
     <input type="text" class="form-control" id="searchBar_series" placeholder="Search...">
 </div>
 
 <form action="" class="select_series" method="post">
+    <a id="clear_selection" href="#" style="display: flex; justify-content: flex-end;">clear selection</a>
     <ul style="max-height:300px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
 
         {% for each in series_data.data %}
         <li>
             <input id="{{each['name']}}" class="form-check-input" type="checkbox" name="selected_series" value="{{ each['id']+'@@@'+each['name'] }}">
             <label for="{{each['name']}}">
-                <p><strong>{{each['name']}}</strong>{% if each['id'] == each['id']|upper %} <a href="{{ url_for('meta_data', type='series', id=each['id']+'@@@'+each['name']) }}">view meta data</a> {% endif %}</p>
+                <p><strong>{{each['name']}}</strong>{% if each['id'] == each['id']|upper %} 
+                <a href="{{ url_for('meta_data', type='series', id=each['id']+'@@@'+each['name']) }}">view meta data
+                </a> {% endif %}</p>
             </label>
         </li>
         {% endfor %}
     </ul>
 
-    <div class="display_selected">
+    <div class="display_selected" id="topics">
         <div class="rowd d-flex">
             <p class="col-sm-1">Selected:</p>
             <ul class="col-sm-11 ms-3">
@@ -42,12 +42,14 @@
     </div>
 
     <div class="rowd d-flex align-items-center">
-        <button type="submit" class="col-sm-1 btn btn-success" name="submit">Select</button>
-        <!-- <button type="submit" class="col-sm-1 btn btn-info ms-3" name="meta_data">View Meta Data</button> -->
-        {% if error %}
-        <h6 class="col-sm-5 ms-3" style="color: red;">{{error}}</h6>
-        {% endif %}
+        <button type="submit" class="col-sm-1 btn btn-success" name="submit" onclick="$('.btn, .error_note').prop('hidden',true); $('.spinner').prop('hidden',false);">submit</button>
+        <a class="col-sm-1 btn btn-info" name="back" style="margin-left: 5px;" role="button" href="{{ url_for('index') }}">back</a>
+
     </div>
 </form>
+<div class="text-center spinner" hidden="" style="margin-top: 10px;">
+    <div class="spinner-border" role="status"></div>
+    <div>Gathering...</div>
+  </div>
 
 {% endblock %}

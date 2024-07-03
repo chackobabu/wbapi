@@ -1,37 +1,20 @@
-from flask import Flask, render_template, session, redirect, url_for, request, send_file, flash, g
+from flask import Flask, render_template, session, redirect, url_for, request, g
 import wbapi
 import json  
 import pandas as pd
-import os
-from flask_caching import Cache
-
-import plotly
 import regex as re
+import redis
 
-from dash import Dash, dash_table, html, dcc
-import dash_bootstrap_components as dbc
-
-import plotly.graph_objects as go
-# from plotly.subplots import make_subplots
+r = redis.Redis(host='localhost', port=6379, db=0)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "wbgapp"
 
-app.config['CACHE_TYPE'] = 'RedisCache'
-app.config['CACHE_REDIS_HOST'] = os.getenv('REDIS_HOST', 'localhost')
-app.config['CACHE_REDIS_PORT'] = int(os.getenv('REDIS_PORT', 6379))
-app.config['CACHE_REDIS_DB'] = int(os.getenv('REDIS_DB', 0))
-app.config['CACHE_REDIS_PASSWORD'] = os.getenv('REDIS_PASSWORD', "c@che")
-app.config['CACHE_DEFAULT_TIMEOUT'] = int(os.getenv('CACHE_DEFAULT_TIMEOUT', 300))
-# socketio = SocketIO(app)
-
-cache = Cache(app)
-
 @app.before_request
 def before_request():
     g.wb = wbapi.wbapi()
+        
 
-@cache.cached()            
 @app.route('/', methods=['GET','POST'])
 def index():
     session.clear()
@@ -50,12 +33,14 @@ def index():
         if 'selection' in request.form.keys():
             session['selected_id'] = request.form.getlist('selection')
             return redirect(url_for("select_series"))
+        else:
+            return render_template("select_db.html",\
+                passed={'length':topics_df.shape[0], 'data':topics}, error="Please select one!")
         
     return render_template("select_db.html",\
                 passed={'length':topics_df.shape[0], 'data':topics})
 
-@cache.cached() 
-@app.route('/select_series', methods=['GET','POST'])
+@app.route('/select_series', methods=['GET','POST']) 
 def select_series():
     
     if len(session['selected_id']) > 0:
@@ -85,7 +70,6 @@ def select_series():
         
     return render_template("select_series.html", series_data={'length':len(series_data),'data':series_data})
 
-@cache.cached() 
 @app.route('/meta_data', methods=['GET','POST'])
 def meta_data():
 
@@ -110,7 +94,6 @@ def meta_data():
         
     return render_template("meta_data.html", passed=passed)
 
-@cache.cached() 
 @app.route('/economies', methods=['GET','POST'])
 def economies():
     
@@ -142,80 +125,91 @@ def economies():
     inc_levels = ['Low income', 'Lower middle income','Upper middle income','High income','Not classified']
 
     if request.method == "POST":
-        chosen_economies = request.form.getlist('selected_economies')
+        selection = request.form.getlist('selected_economies')
+        
+        chosen_economies = []
+        chosen_economy_names = []
+        
+        for each in selection:
+            chosen_economies.append(each.split('@@@')[0])
+            chosen_economy_names.append(each.split('@@@')[1])
+        
+        
+        chosen_regions = request.form.getlist('selected_regions')
+        chosen_inc_levels = request.form.getlist('selected_inc_levels')
+        
         start,end,period = request.form.get('start_year'),request.form.get('end_year'),request.form.get('period')
         
-        if len(chosen_economies) == 0 and start>end:
+        start,end,period = int(start), int(end), int(period) 
+    
+        if len(chosen_economies) == 0 and (start>end or period>(end-start)):
             return render_template("economies.html",\
                                 econ_data = {'econ_data':econ_data,'length':len(economies),'regions': regions,'income_levels': inc_levels, 'series':names},\
-                                error=f"No economy selected. Timeseries {start} to {end} cannot be processed",\
-                                selected_economies=chosen_economies)
+                                error=f"No economy selected. Timeseries {start} to {end} with step {period} cannot be processed",\
+                                selected_economies=chosen_economies, selected_regions=chosen_regions, selected_inc_levels=chosen_inc_levels)
         elif len(chosen_economies) == 0:
             return render_template("economies.html",\
                     econ_data = {'econ_data':econ_data,'length':len(economies),'regions': regions,'income_levels': inc_levels, 'series':names},\
                     error="No economy selected",\
-                    selected_economies=chosen_economies)
-        elif start>end:
+                    selected_economies=chosen_economies, selected_regions=chosen_regions, selected_inc_levels=chosen_inc_levels)
+        elif start>end or period>(end-start):
             return render_template("economies.html",\
                 econ_data = {'econ_data':econ_data,'length':len(economies),'regions': regions,'income_levels': inc_levels, 'series':names},\
-                error=f"Timeseries {start} to {end} cannot be processed",\
-                selected_economies=chosen_economies)
+                error=f"Timeseries {start} to {end} with step {period} cannot be processed",\
+                selected_economies=chosen_economies, selected_regions=chosen_regions, selected_inc_levels=chosen_inc_levels)
             
         else:
             session['economies'] = chosen_economies
             session['series'] = chosen_ids
             session['time'] = [int(each) for each in [start,end,period]]
-            return redirect(url_for("dashboard"))
+            
+            df = g.wb.get_dataframe(series=session['series'], economies=session['economies'], time=range(session['time'][0],session['time'][1]+1,session['time'][2]))
+            
+            meta_data = []
+            for each in session['series']: 
+                try:
+                    meta_data.append(g.wb.metaData_series(param=each).metadata)
+                except:
+                    meta_data.append({})
+                
+            print(json.dumps(meta_data, indent=2))
+            
+            if df.shape[0] == 0:
+                return render_template("economies.html",\
+                econ_data = {'econ_data':econ_data,'length':len(economies),'regions': regions,'income_levels': inc_levels, 'series':names},\
+                error=f"The chosen combination did not return any data! Please select any other.",\
+                selected_economies=chosen_economies, selected_regions=chosen_regions, selected_inc_levels=chosen_inc_levels)
+                
+            df = df.round(2)
 
+            pattern = re.compile(r'\d{4}')
+            years_int = {each:int(pattern.findall(each)[0]) for each in df.filter(regex="\d{4}").columns}
+            df.rename(years_int, axis=1, inplace=True)
+            
+            if len(session['economies']) == 1:
+                df['Country'] = chosen_economy_names[0]
+            
+            if session.get('series_name'):
+                df['Series'] = session['series_name']
+                
+            with open('static/json/economies_dict.json','r') as file:
+                economies_dict = json.loads(file.read())
+            
+            df['Region'] = df['Country'].apply(lambda name:economies_dict[name]['region'])
+            df['Income Level'] = df['Country'].apply(lambda name:economies_dict[name]['incomeLevel'])
+            
+            df.reset_index(inplace=True)
+            df = df[['Country','Series','Region','Income Level'] + list(years_int.values())].copy()
+            print(df)
+            data = json.dumps(df.to_dict('records'))
+            
+            r.set('data', data)
+            # r.set('meta_data',json.dumps(meta_data, indent=2))
+            
+            return redirect('/dashboard/')
+        
     return render_template("economies.html",\
         econ_data = {'econ_data':econ_data,'length':len(economies),'regions': regions,'income_levels': inc_levels, 'series':names})
-
-dash_app = Dash(__name__, server=app, url_base_pathname='/dashboard/',external_stylesheets=[dbc.themes.BOOTSTRAP])
-dash_app.layout = []
-
-@cache.cached() 
-@app.route('/dashboard', methods=['GET','POST'])
-def dashboard():
-    
-    # print(session['series'], session['economies'], session['time'])
-    df = g.wb.get_dataframe(series =session['series'], economies=session['economies'], time=range(session['time'][0],session['time'][1]+1,session['time'][2]))
-    # df.to_csv("extract.csv")
-    df = df.round(2)
-
-    
-    pattern = re.compile(r'\d{4}')
-    years_int = {each:int(pattern.findall(each)[0]) for each in df.filter(regex="\d{4}").columns}
-    df.rename(years_int, axis=1, inplace=True)
-    # print(list(years_int.values()))
-    
-    if session.get('series_name'):
-        df['Series'] = session['series_name']
-        # df = df[['Country','Series'] + list(years_int.values())].copy()
-        
-    with open('static/json/economies_dict.json','r') as file:
-        economies_dict = json.loads(file.read())
-    
-    df['Region'] = df['Country'].apply(lambda name:economies_dict[name]['region'])
-    df['Income Level'] = df['Country'].apply(lambda name:economies_dict[name]['incomeLevel'])
-    
-    df.reset_index(inplace=True)
-    df = df[['Country','Series','Region','Income Level'] + list(years_int.values())].copy()
-    print(df.head())
-    df.to_csv("extract.csv")
-    
-    table = dash_table.DataTable(df.to_dict('records'),\
-                                columns=[{"name": i, "id": i} for i in df.columns],\
-                                        style_table={'height': 600,'overflowX':'auto', 'overflowY':'auto'},
-                                        style_data={
-                                            'width': '150px', 'minWidth': '150px', 'maxWidth': '150px',
-                                            'overflow': 'hidden',
-                                            'textOverflow': 'ellipsis',
-                                        },\
-                                        style_as_list_view=True)
-
-    dash_app.layout = []
-    dash_app.layout.append(table)
-    return render_template('dashboard.html')
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -26,27 +26,32 @@
             transition: 0.3s;
             }
             iframe {
-                display: block;  /* iframes are inline by default */   
-                height: 100vh;  /* Set height to 100% of the container height */   
-                width: 100%;  /* Set width to 100% of the container width */     
-                border: none; /* Remove default border */
-                background: lightyellow; /* Just for styling */
+                display: block;  
+                height: 100%;  
+                width: 100%;    
+                border: none; 
+
             }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <nav class="navbar navbar-light navbar-expand-lg">
-            <div class="d-flex align-items-center">
+    <div class="navbar-bg-custom" style="background-color:azure">
+        <nav class="container navbar navbar-light" >
+            <div class="d-flex align-items-center" >
                 <img alt="logo" src="\static\img\image.png" style="max-height: 40px; max-width: 80px;">
                 <a class="navbar-brand ms-3" href="{{ url_for('index') }}" onclick="sessionStorage.clear();">
                     <h2>World Bank Data Downloader</h2>
                 </a>
             </div>
-        </nav>
+        </nav> 
+    </div>
+    
+
         <p></p>
         <p></p>
+    
+    <div class="container">
         {% block content %}
         {% endblock %}
     </div>

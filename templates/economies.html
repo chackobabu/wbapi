@@ -9,27 +9,38 @@
 {% endfor %}
 {% endif %}
 {% endwith %}
-<h6>Economies:</h6>
+
+{% if error %}
+<div class="alert alert-warning error_note" style="display: flex; align-items: center; color: red;">
+    {{error}}
+    <a href="#" style="margin-left: 10px; font-size: larger; text-decoration: none; color: blue;" onclick="$('.error_note').remove();"><strong>&times;</strong></a>
+  </div>
+{% endif %}
+
+<h5>Economies:</h5>
 <p>You are viewing a list of <span id="count_countries">{{ econ_data.length }}</span> economies. Please use the filters
     and select any one or multiple.
-<p></p>
 </p>
 <div class="rowd d-flex">
     <div class="col-md-8 series">
         <input type="text" class="form-control eco" id="searchBar_economies" placeholder="Search...">
+
+        <div class="select_deselect" style="display: flex; align-items: center;">
         <input type="checkbox" class="form-check-input" id="select_all">
         <label for="select_all"> Select All</label>
+        <a id="clear_selection" href="#" style="margin-left: auto;">clear selection</a>
+        </div>
+
         <form action="" class="series select_series" method="post">
-            <ul style="max-height:380px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
+            <ul style="max-height:370px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
                 {% for each in econ_data.econ_data %}
                 <li>
                     <input id="{{each['name']}}" data-region="{{each['region']}}" data-income="{{each['incLevel']}}"
-                        class="form-check-input" type="checkbox" name="selected_economies" value="{{ each['id'] }}"
+                        class="form-check-input" type="checkbox" name="selected_economies" value="{{ each['id']+'@@@'+each['name'] }}"
                         {% if selected_economies and each['id'] in selected_economies %} checked {% endif %}>
                     <label for="{{each['name']}}">
-                        <p><strong>{{each['name']}}</strong><a style="padding-left: 5px;"
-                                href="{{ url_for('meta_data', type='economy', id=each['id'])+'@@@'+each['name'] }}">meta
-                                data</a></p>
+                        <p><strong>{{each['name']}}</strong>
+                        <a style="padding-left: 5px;" href="{{ url_for('meta_data', type='economy', id=each['id']+'@@@'+each['name'] )}}">view meta data</a></p>
                     </label>
                 </li>
                 {% endfor %}
@@ -44,7 +55,8 @@
                 style="height:220px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
                 {% for each in econ_data.regions %}
                 <li>
-                    <input id="{{each}}" class="form-check-input" type="checkbox" value="{{ each }}">
+                    <input id="{{each}}" class="form-check-input" type="checkbox" name="selected_regions" value="{{ each }}"
+                    {% if selected_regions and each in selected_regions %} checked {% endif %}>
                     <label for="{{each}}">
                         <p><strong>{{each}}</strong></p>
                     </label>
@@ -55,11 +67,12 @@
         <div>
             <h6>Filter by income level</h6>
             <ul class="filter_inc_level"
-                style="height:180px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
+                style="height:170px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
 
                 {% for each in econ_data.income_levels %}
                 <li>
-                    <input id="{{each}}" class="form-check-input" type="checkbox" value="{{ each }}">
+                    <input id="{{each}}" class="form-check-input" type="checkbox" name="selected_inc_levels" value="{{ each }}"
+                    {% if selected_inc_levels and each in selected_inc_levels %} checked {% endif %}>
                     <label for="{{each}}">
                         <p><strong>{{each}}</strong></p>
                     </label>
@@ -70,8 +83,8 @@
     </div>
 
 </div>
-<div class="display_selected">
-    <a href="#" id="show_hide_economies" onclick="showselection_economies();">Show chosen economies(s)</a>
+<div class="display_selected" id="eco">
+    <a href="#" id="show_hide_economies" onclick="showselection_economies();">Show chosen economies</a>
     <div id="display_chosen_economies" hidden="">
         <div class="rowd d-flex">
             <p class="col-sm-2.5">Economies selected:</p>
@@ -82,7 +95,7 @@
 </div>
 
 <p>
-<a href="#" id="show_hide_series" onclick="showselection_series();">Show chosen series(s)</a>
+<a href="#" id="show_hide_series" onclick="showselection_series();">Show chosen series</a>
 <ul id="display_chosen" hidden="">
     {% for each in econ_data.series %}
     <li>{{ each }}</li>
@@ -91,7 +104,7 @@
 </p>
 <div class="row d-flex align-items-center" style="padding-top: 10px;">
     <div class="col-sm-3">
-        <h6>Timeseries:</h6>
+        <h5>Timeseries:</h5>
     </div>
 
     <div>
@@ -111,7 +124,7 @@
 
         <label for="period">in increments of</label>
         <select name="period" id="period">
-            {% for n in range(1,11) %}
+            {% for n in [1,5,10] %}
             <option value="{{ n }}">{{ n }}</option>
             {% endfor %}
         </select>
@@ -121,12 +134,18 @@
 <p></p>
 
 <div class="rowd d-flex align-items-center">
-    <button type="submit" class="col-sm-1 btn btn-success" onclick="$('form').submit();">Extract</button>
+    <button type="submit" class="col-sm-1 btn btn-success" onclick="$('.btn, .error_note').prop('hidden',true); $('.spinner').prop('hidden',false);">extract</button>
+    <a class="col-sm-1 btn btn-info" name="back" style="margin-left: 5px;" role="button" href="{{ url_for('select_series') }}">back</a>
     <!-- <button type="submit" class="col-sm-1 btn btn-info ms-3" name="meta_data">View Meta Data</button> -->
-    {% if error %}
-    <h6 class="col-sm-5 ms-3" style="color: red;">{{error}}</h6>
-    {% endif %}
+
 </div>
 </form>
+
+<div class="text-center spinner" hidden=""  style="margin-top: 10px;">
+    <div class="spinner-border" role="status"></div>
+    <div>Gathering...</div>
+  </div>
+
+<!-- <a href="/dashboard/">DaSH</a> -->
 
 {% endblock %}

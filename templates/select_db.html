@@ -1,21 +1,32 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<p></p>
+{% if error %}
 
+<div class="alert alert-warning error_note" style="display: flex; align-items: center; color: red;">
+    {{error}}
+    <a href="#" style="margin-left: 10px; color: blue;" onclick="$('.error_note').remove();">close</a>
+  </div>
+
+{% endif %}
+
+<p></p>
 <form class="select_db select_series" method="post">
     
     <div class="col-md-12">
-        <h3>Topics</h3>
-        <p>You are viewing {{ passed.length }} available topics. Please select from the list.</p>
+        <h5>Topics:</h5>
+        <p>There are {{ passed.length }} available topics. Please select from the list.</p>
         <input type="text" class="form-control eco" id="searchBar_series" placeholder="Search...">
-        <input type="checkbox" class="form-check-input" id="select_all">
-        <label for="select_all"> Select All</label>
+
+        <div class="select_deselect" style="display: flex; align-items: center;">
+            <input type="checkbox" class="form-check-input" id="select_all">
+            <label for="select_all"> Select All</label>
+            <a id="clear_selection" href="#" style="margin-left: auto;">clear selection</a>
+            </div>
         
             <ul style="max-height:300px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
                 {% for each in passed.data %}
-                <li>
-                    
+                <li> 
                     <input id="{{each['name']}}" type="checkbox" name="selection" value="{{ each['id'] }}">
                     <label for="{{each['name']}}" onmouseover="description({{ each['sourceNote']}});" 
                     onmouseout="$('.description').prop('hidden', true);">
@@ -26,7 +37,7 @@
             </ul>
     </div>
 
-    <div class="display_selected">
+    <div class="display_selected" id="topics">
         <div class="rowd d-flex">
             <p class="col-sm-1">Selected:</p>
             <ul class="col-sm-11 ms-3">
@@ -34,21 +45,22 @@
             </ul>
         </div>
     </div>
-
     <div class="rowd d-flex align-items-center">
-        <button type="submit" class="col-sm-1 btn btn-success">View all Series</button>
-        {% if error %}
-        <h6 class="col-sm-3 ms-3" style="color: red;">{{error}}</h6>
-    {% endif %}
+        <button type="submit" class="col-sm-1 btn btn-success" onclick="$('.btn, .error_note').prop('hidden',true); $('.spinner').prop('hidden',false);">submit</button>
     </div>
+
+    <div class="text-center spinner" hidden=""  style="margin-top: 10px;">
+        <div class="spinner-border" role="status"></div>
+        <div>Gathering...</div>
+      </div>
 
     <div class="card description" hidden="">
         <div class="container">  
           <p></p>
         </div>
       </div>
-
 </form>
+
 
 
 {% endblock %}

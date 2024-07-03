@@ -7,6 +7,7 @@ function showselection_series() {
         $('#show_hide_series').text('Hide chosen series(s)')
     }
 };
+
 function showselection_economies() {
     if ($('#display_chosen_economies').is(':visible')) {
         $('#display_chosen_economies').prop('hidden', true);
@@ -41,11 +42,26 @@ $(document).ready(function () {
     //select all button
     $('#select_all').on('change', function () {
         $('.select_series li:visible input').prop('checked', $('#select_all').prop('checked'));
-        if ($('.select_series li:visible input:checked').length == $('.select_series li:visible').length) {
-            $('label[for="select_all"]').text(' Deselect All');
-        } else {
-            $('label[for="select_all"]').text(' Select All');
-        }
+    });
+
+    $('#clear_selection').on('click', function () {
+        $('.select_series li:visible input').prop('checked', false);
+        $('#select_all').prop('checked', false);
+        $('label[for="select_all"]').text(' Select All');
+        $('.display_selected ul').empty();
+        $('.display_selected#eco p').text("Economies selected:");
+        $('.display_selected#topics p').text("Selected: (0)");
+
+
+        $('.filter_region li input[type="checkbox"]').each(function(){
+            $(this).prop('checked', false);
+        });
+        $('.filter_inc_level li input[type="checkbox"]').each(function(){
+            $(this).prop('checked', false);
+        });
+
+        $('.select_series li').show();
+        update_count();
     });
 
     function update_count() {
@@ -106,6 +122,7 @@ $(document).ready(function () {
                 selected.push($(this).attr('id'));
             }
         });
+
         var displayList = $('.display_selected ul');
         displayList.empty();
         $('.display_selected p').text("Selected: (" + selected.length + ")");
@@ -141,6 +158,7 @@ $(document).ready(function () {
     });
 
     region_checkboxes.add(inclevel_checkboxes).on('change', function () {
+        $('#select_all').prop('checked', false);
         update_count();
         searchbar(type="economies");
         region_re = region_filters.join('|')
@@ -178,4 +196,26 @@ $(document).ready(function () {
     $("#searchBar_series").on('keyup', function () {
         searchbar(type = 'series');
     });
+});
+
+window.addEventListener("pageshow", function(event) {
+
+    var list = $('.select_series li input[type="checkbox"]');
+        let selected = [];
+        list.each(function () {
+            if ($(this).prop('checked') == true) {
+                selected.push($(this).attr('id'));
+            }
+        });
+
+        var displayList = $('.display_selected ul');
+        displayList.empty();
+        $('.display_selected p').text("Selected: (" + selected.length + ")");
+        selected.forEach(function (id) {
+            displayList.append('<li style="display:inline;">' + id + ', </li>');
+        });
+
+    if (event.persisted) {
+        window.location.reload();
+    }
 });
