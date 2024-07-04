@@ -171,6 +171,8 @@ def economies():
                     meta_data.append(g.wb.metaData_series(param=each).metadata)
                 except:
                     meta_data.append({})
+                    
+            
                 
             print(json.dumps(meta_data, indent=2))
             
