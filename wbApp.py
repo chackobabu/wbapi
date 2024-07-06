@@ -5,7 +5,9 @@ import pandas as pd
 import regex as re
 import redis
 
-r = redis.Redis(host='localhost', port=6379, db=0)
+with open("redis_cred.json","r") as file:
+    cred = json.loads(file.read())
+r = redis.Redis(host=cred['host'], port=cred['port'], password=cred['password'])
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "wbgapp"
@@ -14,7 +16,6 @@ app.config['SECRET_KEY'] = "wbgapp"
 def before_request():
     g.wb = wbapi.wbapi()
         
-
 @app.route('/', methods=['GET','POST'])
 def index():
     session.clear()
@@ -165,16 +166,14 @@ def economies():
             
             df = g.wb.get_dataframe(series=session['series'], economies=session['economies'], time=range(session['time'][0],session['time'][1]+1,session['time'][2]))
             
-            meta_data = []
-            for each in session['series']: 
-                try:
-                    meta_data.append(g.wb.metaData_series(param=each).metadata)
-                except:
-                    meta_data.append({})
-                    
-            
+            # meta_data = []
+            # for each in session['series']: 
+            #     try:
+            #         meta_data.append(g.wb.metaData_series(param=each).metadata)
+            #     except:
+            #         meta_data.append({})  
                 
-            print(json.dumps(meta_data, indent=2))
+            # print(json.dumps(meta_data, indent=2))
             
             if df.shape[0] == 0:
                 return render_template("economies.html",\
@@ -206,8 +205,7 @@ def economies():
             data = json.dumps(df.to_dict('records'))
             
             r.set('data', data)
-            # r.set('meta_data',json.dumps(meta_data, indent=2))
-            
+    
             return redirect('/dashboard/')
         
     return render_template("economies.html",\
