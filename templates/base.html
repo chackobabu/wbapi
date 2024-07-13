@@ -32,11 +32,19 @@
                 border: none; 
 
             }
+
+            .links_desc {
+                text-decoration: none;
+                font-weight: 500;
+                color: black;
+                padding-left: 0.1cm;
+                padding-right: 0.1cm;
+            }
     </style>
 </head>
 
 <body>
-    <div class="navbar-bg-custom" style="background-color:azure">
+    <div class="navbar-bg-custom">
         <nav class="container navbar navbar-light" >
             <div class="d-flex align-items-center" >
                 <img alt="logo" src="\static\img\image.png" style="max-height: 40px; max-width: 80px;">
@@ -54,7 +62,13 @@
     <div class="container">
         {% block content %}
         {% endblock %}
+        
+        <div style="display: flex; justify-content: right; padding-top: 0.5cm;">
+            Made with ❤️ by <a class="links_desc" href="https://chackobabu.github.io/">Chacko Babu</a> using <a class="links_desc" href="https://flask.palletsprojects.com/en/3.0.x/" target="#">Flask</a>and<a class="links_desc" href="https://dash.plotly.com/" target="#">Plotly-Dash</a>
+        </div>
+        
     </div>
+    
 </body>
 
 </html>

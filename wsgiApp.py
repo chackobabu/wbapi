@@ -1,6 +1,5 @@
 from flask import Flask
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
-from werkzeug.exceptions import NotFound
 
 from wbApp import app as app1
 from dashApp import dashapp

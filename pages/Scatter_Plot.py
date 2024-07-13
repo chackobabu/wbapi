@@ -12,7 +12,9 @@ import pandas as pd
 
 dash.register_page(__name__, name='SCATTER PLOT', path='/scatter')
 
-r = redis.Redis(host='localhost', port=6379, db=0)
+with open("redis_cred.json","r") as file:
+    cred = json.loads(file.read())    
+r = redis.Redis(host=cred['host'], port=cred['port'], password=cred['password'], db=0)
 
 def get_data():
     data = r.get('data')
@@ -31,10 +33,7 @@ layout = dbc.Container(
             dbc.Row(id="legend_container", justify='end'),
             dbc.Col(dcc.Graph(id="time_series")),
             html.P(),
-            html.Div([
-            html.P("*As per the latest classification. The classifications are updated each year on July 1, based on the GNI per capita of the previous calendar year."),
-            html.A(children=" read more", href="https://blogs.worldbank.org/en/opendata/world-bank-country-classifications-by-income-level-for-2024-2025#:~:text=The%20World%20Bank%20Group%20assigns,of%20the%20previous%20calendar%20year.")
-            ], style={"display":"flex"})
+            html.Div(id="foot")
         ])
 
 @dash.callback(
@@ -76,7 +75,7 @@ def update_inputs(triggered, data):
     log_y_axis = dcc.Checklist(options=[{'label':'log', 'value':1}], id='log_y',persistence=True, persistence_type='session')
     
     legend = dcc.RadioItems(options=[{'label':'Region', 'value':'Region'},\
-                                    {'label':'Income Level', 'value':'Income Level'}],\
+                                    {'label':'Income Level*', 'value':'Income Level'}],\
                                     value="Region",
                                     style={'display': 'flex','gap': '8px'}, id='legend', inline=True)
     
@@ -93,20 +92,12 @@ def update_inputs(triggered, data):
             html.P(),
             dbc.Col(html.Label(html.H6("Select Year:")), style={'color':'darkblue'}, width=1),
             dbc.Col(slider, width=11)
-    
             ]
     return inputs, legend_contianer, df.to_dict('records')
 
 @dash.callback(
-    Output('title','children'),
-    [Input('x_axis','value'),\
-    Input('y_axis','value'),   
-    Input('year_slider_sc', 'value')])
-def update_title(x_axis, y_axis, year_slider_sc):
-    return f"{y_axis} vs {x_axis} at year {year_slider_sc}"
-
-@dash.callback(
-            Output('scatter_plot', 'figure'),
+            [Output('scatter_plot', 'figure'),
+            Output('title','children')],
             [Input('year_slider_sc', 'value'),\
             Input('x_axis','value'),\
             Input('y_axis','value'),\
@@ -130,9 +121,11 @@ def update_scatter(year, x_axis,y_axis, log_x, log_y, legend, data):
 
     figure.update_traces(marker_size=15, opacity=0.7)
     figure.update_layout(hovermode='closest')
-    return figure
+    title = f"{y_axis} vs {x_axis} at year {year}"
+    return figure, title
 
 @dash.callback([Output('time_series', 'figure'),\
+                Output('foot', 'children'),
                 Output('time_series', 'style')],
                 [Input('x_axis','value'),
                 Input('y_axis','value'),
@@ -173,5 +166,11 @@ def get_hoverdata(x_axis,y_axis,clickData, log_x, log_y, data):
         
     if log_y and log_y[0] == 1:
         figure.update_yaxes(title = f"{y_axis} (log)", type='log',row=1, col=2)
+        
     
-    return figure, {"display":"block"}        
+    foot = html.Div([
+        html.P("*Income levels are as per the latest classification. The classifications are updated each year on July 1, based on the GNI per capita of the previous calendar year."),
+        html.A(style={"padding-left":"5px"},children="read more",target="#", href="https://blogs.worldbank.org/en/opendata/world-bank-country-classifications-by-income-level-for-2024-2025#:~:text=The%20World%20Bank%20Group%20assigns,of%20the%20previous%20calendar%20year.")
+        ], style={"display":"flex"})
+    
+    return figure,foot, {"display":"block"}        

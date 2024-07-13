@@ -17,12 +17,13 @@ function showselection_economies() {
         $('#show_hide_economies').text('Hide chosen economies(s)')
     }
 };
+
 function check_referrer() {
     if (document.referrer.includes('series')) {
-        $('a.ref').attr('href', 'http://127.0.0.1:5000/select_series')
+        $('a.ref').attr('href', 'http://chackobabu.pythonanywhere.com/select_series')
         $('a.ref').text('Go back to choose series');
     } else if (document.referrer.includes('economies')) {
-        $('a.ref').attr('href', 'http://127.0.0.1:5000/economies')
+        $('a.ref').attr('href', 'http://chackobabu.pythonanywhere.com/economies')
         $('a.ref').text('Go back to choose economies');
     }
 };
@@ -68,7 +69,7 @@ $(document).ready(function () {
         $('#count_countries').text($('.select_series li input:visible').length);
     };
 
-    //searchbar function - defining
+    //bar function - defining
     // function search_bar() {
     //     var search_terms = $.map($('#searchBar').val().toLowerCase().split(','), $.trim);
     //     $('.select_series li').each(function () {
@@ -89,7 +90,13 @@ $(document).ready(function () {
             var search_terms = $.map($('#searchBar_series').val().toLowerCase().split(','), $.trim);
             $('.select_series li').each(function () {
                 var choice = $(this).find('input').attr('id').toLowerCase().trim();
-                if (choice.match(search_terms.join('|'))) {
+                var matchFound = choice.match(search_terms.join('|'))
+
+                var exactMatchFound = search_terms.some(function(term) {
+                    return choice === term;
+                });
+
+                if (matchFound || exactMatchFound) {
                     $(this).show();
                 } else {
                     $(this).hide();

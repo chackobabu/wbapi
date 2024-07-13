@@ -48,7 +48,7 @@
 
     </div>
 
-    <div class="col-md-2 ms-4">
+    <div class="col-md-2 ms-4" >
         <div>
             <h6>Filter by region</h6>
             <ul class="filter_region"
@@ -65,7 +65,7 @@
             </ul>
         </div>
         <div>
-            <h6>Filter by income level</h6>
+            <h6>Filter by income level*</h6>
             <ul class="filter_inc_level"
                 style="height:170px; width:100%; padding-left: 10px; padding-top: 10px; overflow-y:auto;">
 
@@ -133,6 +133,7 @@
 </div>
 <p></p>
 
+<p>*Income levels are as per the latest classification. The classifications are updated each year on July 1, based on the GNI per capita of the previous calendar year. <a href="https://blogs.worldbank.org/en/opendata/world-bank-country-classifications-by-income-level-for-2024-2025#:~:text=The%20World%20Bank%20Group%20assigns,of%20the%20previous%20calendar%20year." target="#">read more</a></p>
 <div class="rowd d-flex align-items-center">
     <button type="submit" class="col-sm-1 btn btn-success" onclick="$('.btn, .error_note').prop('hidden',true); $('.spinner').prop('hidden',false);">extract</button>
     <a class="col-sm-1 btn btn-info" name="back" style="margin-left: 5px;" role="button" href="{{ url_for('select_series') }}">back</a>
@@ -143,7 +144,7 @@
 
 <div class="text-center spinner" hidden=""  style="margin-top: 10px;">
     <div class="spinner-border" role="status"></div>
-    <div>Gathering...</div>
+    <div>visualizing...</div>
   </div>
 
 <!-- <a href="/dashboard/">DaSH</a> -->

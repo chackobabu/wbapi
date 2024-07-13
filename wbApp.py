@@ -7,7 +7,7 @@ import redis
 
 with open("redis_cred.json","r") as file:
     cred = json.loads(file.read())
-r = redis.Redis(host=cred['host'], port=cred['port'], password=cred['password'])
+r = redis.Redis(host=cred['host'], port=cred['port'], password=cred['password'], db=0)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "wbgapp"
@@ -18,6 +18,7 @@ def before_request():
         
 @app.route('/', methods=['GET','POST'])
 def index():
+    r.flushdb()
     session.clear()
     topics_df = g.wb.search_topics()
 
@@ -76,6 +77,7 @@ def meta_data():
 
     series_id = request.args.get('id')
     id, name = series_id.split('@@@')
+    
     try:
         if request.args.get('type') == 'series':
             metadata = g.wb.metaData_series(param=id).metadata

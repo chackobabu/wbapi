@@ -7,14 +7,19 @@ import redis
 import json
 
 dash.register_page(__name__, name='DATA TABLE', path="/")
-r = redis.Redis(host='localhost', port=6379, db=0)
+
+with open("redis_cred.json","r") as file:
+    cred = json.loads(file.read())    
+r = redis.Redis(host=cred['host'], port=cred['port'], password=cred['password'], db=0)
 
 def get_data():
     data = r.get('data')
     return json.loads(data) if data else {}
 
 instructions = [html.H5("You are viewing the data as a table. Please choose between options available in top-right corner, and use the filters on the data.", style={"color":"darkblue"}),
-                html.P("Click download to save the data-table in your system in .xlsx format. Click on the globe on top if you wish to extract another file.")]
+                html.P("Click download to save the data-table in your system in .xlsx format.")]
+
+
 
 layout = dbc.Container(
         [dcc.Store(id='trigger', data=True),
@@ -24,14 +29,7 @@ layout = dbc.Container(
         dbc.Row(dbc.Col(id="df_container", width=12, style={"overflow":"auto"})),
         html.P(),
         dcc.Store(id="dataview"),
-        html.Div([dcc.Download(id="download_data_full"),
-        dbc.Col(dbc.Button("Download", id="btn_full", class_name='btn-success'), width=1)]),
-        html.P(),
-        html.Div([
-        html.P("*Income levels are as per the latest classification. The classifications are updated each year on July 1, based on the GNI per capita of the previous calendar year."),
-        html.A(style={"padding-left":"5px"},children="read more",target="#", href="https://blogs.worldbank.org/en/opendata/world-bank-country-classifications-by-income-level-for-2024-2025#:~:text=The%20World%20Bank%20Group%20assigns,of%20the%20previous%20calendar%20year.")
-        ], style={"display":"flex"})
-
+        html.Div(id="download_foot")
         ])
 
 @dash.callback(
@@ -102,6 +100,7 @@ def update_layout(triggered, data):
     
 @dash.callback(
     [Output("df_container","children"),
+     Output("download_foot","children"),
      Output("dataview","data")],
     [Input('datastore', 'data'),
      Input("sel_countries","value"),
@@ -140,7 +139,15 @@ def update_table(data, countries, series, region, inc_level, years):
             page_size= 15,
         )
     
-    return data_table, view
+    download_foot = [html.Div([dcc.Download(id="download_data_full"),
+        dbc.Col(dbc.Button("Download", id="btn_full", class_name='btn-success'), width=1)]),
+        html.P(),
+        html.Div([
+        html.P("*Income levels are as per the latest classification. The classifications are updated each year on July 1, based on the GNI per capita of the previous calendar year."),
+        html.A(style={"padding-left":"5px"},children="read more",target="#", href="https://blogs.worldbank.org/en/opendata/world-bank-country-classifications-by-income-level-for-2024-2025#:~:text=The%20World%20Bank%20Group%20assigns,of%20the%20previous%20calendar%20year.")
+        ], style={"display":"flex"})]
+    
+    return data_table, download_foot, view
 
 @dash.callback(
     Output("download_data_full", "data"),

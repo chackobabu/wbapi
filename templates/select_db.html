@@ -2,20 +2,24 @@
 {% block content %}
 
 {% if error %}
-
 <div class="alert alert-warning error_note" style="display: flex; align-items: center; color: red;">
     {{error}}
     <a href="#" style="margin-left: 10px; color: blue;" onclick="$('.error_note').remove();">close</a>
   </div>
-
 {% endif %}
 
-<p></p>
+    <div>
+        This application works by making calls (based on user's inputs) to world bank API using a python library named <a class="links_desc" href="https://blogs.worldbank.org/en/opendata/introducing-wbgapi-new-python-package-accessing-world-bank-data" target="#">WBGAPI</a>. Please select the desired fields on each page <a class="links_desc" href="https://data.worldbank.org/indicator" target="#">(Indicator > Series > Economy and Time period)</a> until you reach the visualizations. Thank you!
+    </div>
+
+    <p></p>
+
 <form class="select_db select_series" method="post">
     
+
     <div class="col-md-12">
-        <h5>Topics:</h5>
-        <p>There are {{ passed.length }} available topics. Please select from the list.</p>
+        <h5>Indicators:</h5>
+        <p>There are {{ passed.length }} available indicators. Please select from the list.</p>
         <input type="text" class="form-control eco" id="searchBar_series" placeholder="Search...">
 
         <div class="select_deselect" style="display: flex; align-items: center;">
@@ -51,7 +55,7 @@
 
     <div class="text-center spinner" hidden=""  style="margin-top: 10px;">
         <div class="spinner-border" role="status"></div>
-        <div>Gathering...</div>
+        <div>gathering series for the indicator(s)...</div>
       </div>
 
     <div class="card description" hidden="">
